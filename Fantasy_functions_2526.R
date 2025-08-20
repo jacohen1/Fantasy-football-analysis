@@ -695,3 +695,55 @@ get_waiver_summary <- function(waivers){
   
   return(transfer_summary)
 }
+
+## Alternative luck formulation based on opponent not optimising ---------------
+message("Alternative luck formulation based on opponent not optimising")
+
+get_luck_optimised <- function(weekly_data, matchups){
+  
+  #step 1: get optimal and actual match results
+  match_results_optimal <- get_match_results_optimal(weekly_data, matchups)
+  
+  #step 2: identify when a manager benefited (won or drew only because the opponent was suboptimal)
+  benefit_data <- match_results_optimal %>%
+    mutate(
+      # Did a manager gain league points compared to the optimal result?
+      manager1_benefit = manager1_result > manager1_opt_result,
+      manager2_benefit = manager2_result > manager2_opt_result,
+      manager1_unlucky = manager1_result < manager1_opt_result,
+      manager2_unlucky = manager2_result < manager2_opt_result
+    ) %>%
+    select(gameweek, manager1, manager2, manager1_benefit, manager2_benefit, manager1_unlucky, manager2_unlucky)
+  
+  #step 3: convert to long format
+  benefit_long <- benefit_data %>%
+    pivot_longer(
+      cols = c(manager1, manager2),
+      names_to = "manager_type",
+      values_to = "manager"
+    ) %>%
+    mutate(
+      benefited = case_when(
+        manager_type == "manager1" ~ manager1_benefit,
+        manager_type == "manager2" ~ manager2_benefit
+      ),
+      unlucky = case_when(
+        manager_type == "manager1" ~ manager1_unlucky,
+        manager_type == "manager2" ~ manager2_unlucky
+      )
+    ) %>%
+    select(gameweek, manager, benefited, unlucky)
+  
+  #step 4: summarise totals per manager
+  luck_summary <- benefit_long %>%
+    filter(!is.na(manager)) %>%
+    group_by(manager) %>%
+    summarise(
+      lucky = sum(benefited, na.rm = TRUE),
+      bad_manager = sum(unlucky, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    arrange(desc(lucky))
+  
+  return(luck_summary)
+}
