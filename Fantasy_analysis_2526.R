@@ -65,8 +65,8 @@ league_table_optimised <- get_optimised_league_table(weekly_data = weekly_data, 
 
 ##top players
 top_position <- get_top_scorers_by_position(weekly_data = weekly_data)
-top_player <- get_top_overall_player(weekly_data = weekly_data)
-top_player_per_appearance <- get_top_per_appearance(weekly_data = weekly_data, min_appearances = 1)
+top_player <- get_top_overall_player(weekly_data = weekly_data, min_appearances = 2)
+top_player_per_appearance <- get_top_per_appearance(weekly_data = weekly_data, min_appearances = 2)
 
 ##top club
 top_club <- get_top_club_per_manager(weekly_data = weekly_data)
@@ -862,7 +862,7 @@ league_position <- ggplot(data = cumulative_totals[which(!is.na(cumulative_total
   geom_line(size = 3) +
   geom_point(size = 6) +
   scale_x_continuous(breaks = c(1, 5, 10, 15, 20, 25, 30, 35)) +
-  scale_y_continuous(breaks = c(1, 2, 3, 4, 5, 6)) +
+  scale_y_reverse(breaks = c(1, 2, 3, 4, 5, 6)) +
   labs(title = "League Position", x = "Gameweek", y = "Position", color = "Manager") +
   theme_bw(base_size = 14) +
   theme(legend.position = "bottom",
@@ -961,3 +961,67 @@ luck_managerial_plot <- ggplot(luck_managerial_long, aes(x = manager, y = count,
 
 #save plots
 ggsave(here("Results/25_26", "luck_managerial.png"), luck_managerial_plot, units = "cm", width = 40, height = 30)
+
+
+## Waiver plots ----------------------------------------------------------------
+message("Waiver plots")
+
+#pivot longer and capitalise manager names
+waiver_long <- waiver_summary %>%
+  pivot_longer(cols = c(def, mid, fwd, gkp),
+               names_to = "position",
+               values_to = "count") %>%
+  mutate(
+    manager = str_to_title(manager),   #capitalise names
+    position = recode(position,
+                      "def" = "Defender",
+                      "mid" = "Midfielder",
+                      "fwd" = "Forward",
+                      "gkp" = "Goalkeeper"),
+    position = factor(position, levels = c("Defender", "Midfielder", "Forward", "Goalkeeper"))
+  ) %>%
+  select(-c(total_transfers))
+
+
+waiver_details_plot <- ggplot(waiver_long, aes(x = manager, y = count, fill = position)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  #scale_fill_manual(values = c("Benefited" = "darkgreen", "Bad Managerial Choices" = "red3")) +
+  labs(title = "Transfers by position", fill = "", x = "", y = "Count") +
+  theme_bw(base_size = 14) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 38, face = "bold"),
+        plot.title = element_text(size = 42, hjust = 0.5, face = "bold"),
+        axis.text = element_text(size = 38, color = "black"),
+        axis.title = element_text(size = 42),
+        axis.title.y = element_text(size = 42, vjust = 1.5),
+        axis.text.x = element_text(size = 38, color = "black", face = "bold"),
+        legend.text = element_text(size = 38, face = "bold"),
+        legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1, 'cm'))
+
+#save plots
+ggsave(here("Results/25_26", "waiver_details.png"), waiver_details_plot, units = "cm", width = 40, height = 30)
+
+#total waivers
+waiver_plot <- ggplot(data = waiver_summary, aes(x = str_to_title(manager), y = total_transfers, color = manager, fill = manager)) +
+  geom_col() +
+  labs(title = "Total transfers", x = "", y = "Count", color = "", fill = "") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 38, face = "bold"),
+        plot.title = element_text(size = 42, hjust = 0.5, face = "bold"),
+        axis.text = element_text(size = 38, color = "black"),
+        axis.title = element_text(size = 42),
+        axis.title.y = element_text(size = 42, vjust = 1.5),
+        axis.text.x = element_text(size = 38, color = "black"),
+        legend.text = element_text(size = 38, face = "bold"),
+        legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1, 'cm')) +
+  scale_color_manual(values = c("#D1352B", "#4A7CB3", "#68AD57", "#8E529F", "#EF8632", "#737373"),
+                     labels = c("Benji", "Jacob", "Josh", "Michael", "Miz", "Nez")) +
+  scale_fill_manual(values = c("#D1352B", "#4A7CB3", "#68AD57", "#8E529F", "#EF8632", "#737373"),
+                    labels = c("Benji", "Jacob", "Josh", "Michael", "Miz", "Nez"))
+
+#save plots
+ggsave(here("Results/25_26", "waiver_overall.png"), waiver_plot, units = "cm", width = 40, height = 30)
