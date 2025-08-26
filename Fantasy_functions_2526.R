@@ -581,9 +581,12 @@ get_top_scorers_by_position <- function(weekly_data){
 }
 
 #top overall points
-get_top_overall_player <- function(weekly_data){
+get_top_overall_player <- function(weekly_data, min_appearances){
   
   summary_df <- get_player_summary(weekly_data = weekly_data)
+  
+  summary_df <- summary_df %>%
+    filter(appearances >= min_appearances) #only players with enough appearances
   
   #pick top scorer per manager, tie break by fewer appearances
   top_scorers <- summary_df %>%
