@@ -750,3 +750,23 @@ get_luck_optimised <- function(weekly_data, matchups){
   
   return(luck_summary)
 }
+
+## Count total automatic substitutions per manager -----------------------------
+message("Count total automatic substitutions per manager")
+
+get_automatic_subs <- function(weekly_data){
+  
+  all_managers <- unique(weekly_data$manager)
+  all_managers <- all_managers[!is.na(all_managers)]
+  
+  automatic_subs <- weekly_data %>%
+    filter(automatic_sub_on == 1) %>%
+    count(manager, name = "automatic_subs")
+  
+  total_auto_subs <- tibble(manager = all_managers) %>%
+    left_join(automatic_subs, by = "manager") %>%
+    mutate(automatic_subs = replace_na(automatic_subs, 0)) %>%
+    arrange(desc(automatic_subs))
+  
+  return(total_auto_subs)
+}

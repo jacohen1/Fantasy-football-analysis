@@ -65,8 +65,8 @@ league_table_optimised <- get_optimised_league_table(weekly_data = weekly_data, 
 
 ##top players
 top_position <- get_top_scorers_by_position(weekly_data = weekly_data)
-top_player <- get_top_overall_player(weekly_data = weekly_data, min_appearances = 2)
-top_player_per_appearance <- get_top_per_appearance(weekly_data = weekly_data, min_appearances = 2)
+top_player <- get_top_overall_player(weekly_data = weekly_data, min_appearances = 3)
+top_player_per_appearance <- get_top_per_appearance(weekly_data = weekly_data, min_appearances = 3)
 
 ##top club
 top_club <- get_top_club_per_manager(weekly_data = weekly_data)
@@ -76,6 +76,9 @@ shared_players <- get_most_managers_per_player(weekly_data = weekly_data, list_l
 
 ##waivers
 waiver_summary <- get_waiver_summary(waivers = waivers)
+
+#automatic subs
+auto_subs <- get_automatic_subs(weekly_data = weekly_data)
 
 ## Plot league tables ----------------------------------------------------------
 message("Plot league tables")
@@ -528,6 +531,11 @@ top_player_app_table <- top_player_per_appearance %>%
   fmt_number(
     columns = ends_with("_points"),
     decimals = 0
+  ) %>%
+  
+  fmt_number(
+    columns = points_per_appearance,
+    decimals = 1
   ) %>%
   
   #rename columns for a cleaner table display
@@ -1025,3 +1033,29 @@ waiver_plot <- ggplot(data = waiver_summary, aes(x = str_to_title(manager), y = 
 
 #save plots
 ggsave(here("Results/25_26", "waiver_overall.png"), waiver_plot, units = "cm", width = 40, height = 30)
+
+
+## Auto sub plots ----------------------------------------------------------------
+message("Auto sub plots")
+
+auto_sub_plot <- ggplot(data = auto_subs, aes(x = str_to_title(manager), y = automatic_subs, color = manager, fill = manager)) +
+  geom_col() +
+  labs(title = "Total automatic substitutions", x = "", y = "Count", color = "", fill = "") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 38, face = "bold"),
+        plot.title = element_text(size = 42, hjust = 0.5, face = "bold"),
+        axis.text = element_text(size = 38, color = "black"),
+        axis.title = element_text(size = 42),
+        axis.title.y = element_text(size = 42, vjust = 1.5),
+        axis.text.x = element_text(size = 38, color = "black"),
+        legend.text = element_text(size = 38, face = "bold"),
+        legend.key.height= unit(1, 'cm'),
+        legend.key.width= unit(1, 'cm')) +
+  scale_color_manual(values = c("#D1352B", "#4A7CB3", "#68AD57", "#8E529F", "#EF8632", "#737373"),
+                     labels = c("Benji", "Jacob", "Josh", "Michael", "Miz", "Nez")) +
+  scale_fill_manual(values = c("#D1352B", "#4A7CB3", "#68AD57", "#8E529F", "#EF8632", "#737373"),
+                    labels = c("Benji", "Jacob", "Josh", "Michael", "Miz", "Nez"))
+
+#save plots
+ggsave(here("Results/25_26", "auto_subs.png"), auto_sub_plot, units = "cm", width = 40, height = 30)
