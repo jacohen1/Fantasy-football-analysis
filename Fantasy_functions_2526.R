@@ -770,3 +770,45 @@ get_automatic_subs <- function(weekly_data){
   
   return(total_auto_subs)
 }
+
+
+## Get preferred formation per manager -----------------------------------------
+message("Get preferred formation per manager")
+
+#count positional totals per week per manager
+get_positional_totals <- function(weekly_data){
+  
+  #get weekly starters
+  starters <- get_starters(weekly_data = weekly_data)
+  
+  #calculate positional totals per manager per week
+  summary_df <- starters %>%
+    group_by(manager, gameweek) %>%
+    summarise(
+      defenders = sum(position == "def"),
+      midfielders = sum(position == "mid"),
+      forwards = sum(position == "fwd"),
+      .groups = "drop") %>%
+    mutate(formation = paste0(defenders, "-", midfielders, "-", forwards))
+  
+  return(summary_df)
+}
+
+get_pref_formation <- function(weekly_data){
+  
+  positional_totals <- get_positional_totals(weekly_data = weekly_data)
+  
+  #find most used formation per manager  
+  pref_formations <- positional_totals %>%
+    group_by(manager, formation) %>%
+    summarise(times_used = n(), .groups = "drop_last") %>%
+    group_by(manager) %>%
+    filter(times_used == max(times_used)) %>%
+    summarise(
+      pref_formation = paste(formation, collapse = ", "),
+      times_used = first(times_used),
+      .groups = "drop"
+    )
+  
+  return(pref_formations)
+}
