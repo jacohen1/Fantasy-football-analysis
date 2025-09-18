@@ -1,0 +1,28 @@
+# R history and session files
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+
+# RStudio project files
+.Rproj.user
+.Rproj
+
+# R package build folders
+.Rcheck/
+vignettes/*.html
+vignettes/*.pdf
+
+# Output folders
+__pycache__/
+*.o
+*.so
+*.dll
+
+# Logs and temporary files
+*.log
+*.tmp
+*.out
+
+# Misc
+.DS_Store
