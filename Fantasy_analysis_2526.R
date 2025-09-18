@@ -27,14 +27,22 @@ lapply(packages, library, character.only=TRUE)
 ## Load data -------------------------------------------------------------------
 message("Load data")
 #path to the Excel file
-file_path <- here("Data", "Fantasy_data_2526.xlsx")
+file_path <- here("Data", "Fantasy_data_2526.xlsm")
 
 #get all sheet names
 sheet_names <- excel_sheets(file_path)
 
+#function to remove any rows that have an NA in them
+read_clean <- function(file, sheet) {
+  df <- read_excel(file, sheet = sheet)
+  #keep only rows with no NAs in any column
+  df <- df %>% filter(if_all(everything(), ~ !is.na(.)))
+  return(df)
+}
+
 #read each sheet into its own data frame
 for(sheet in sheet_names){
-  assign(sheet, read_excel(file_path, sheet = sheet))
+  assign(sheet, read_clean(file_path, sheet))
 }
 
 #source functions
@@ -79,6 +87,9 @@ waiver_summary <- get_waiver_summary(waivers = waivers)
 
 #automatic subs
 auto_subs <- get_automatic_subs(weekly_data = weekly_data)
+
+#preferred formation
+pref_form <- get_pref_formation(weekly_data = weekly_data)
 
 ## Plot league tables ----------------------------------------------------------
 message("Plot league tables")
@@ -780,6 +791,83 @@ shared_players_table <- shared_players2 %>%
 shared_players_table
 
 gtsave(shared_players_table, filename = here("Results/25_26", "shared_players.png"))
+
+
+## Plot preferred formation data -----------------------------------------------
+message("Plot preferred formation data")
+
+#top player per position
+top_formation_table <- pref_form %>%
+  #Capitalise text columns
+  mutate(manager = str_to_title(manager)) %>%
+  
+  #create the gt table
+  gt() %>%
+  
+  #add a title to the table
+  tab_header(
+    title = "Preferred Formation 2025/26"
+  ) %>%
+  
+  #format times_used column to have 0 decimal places
+  fmt_number(
+    columns = times_used,
+    decimals = 0
+  ) %>%
+  
+  #rename columns for a cleaner table display
+  cols_label(
+    manager = "Manager",
+    pref_formation = "Formation",
+    times_used = "Times used"
+  ) %>%
+  
+  #style the table title
+  tab_style(
+    style = cell_text(color = "#381B58", weight = "bold", size = px(30)),
+    locations = cells_title(groups = "title")  # Target the title
+  ) %>%
+  
+  #style the column labels (headers)
+  tab_style(
+    style = list(
+      cell_fill(color = "#381B58"),  # Set the background color
+      cell_text(weight = "bold", color = "#00FF87", align = "center")  # Optional: keep text bold & black
+    ),
+    locations = cells_column_labels(-c(manager))
+  ) %>%
+  
+  #style the column labels (headers)
+  tab_style(
+    style = list(
+      cell_fill(color = "#381B58"),  # Set the background color
+      cell_text(weight = "bold", color = "#00FF87", align = "left")  # Optional: keep text bold & black
+    ),
+    locations = cells_column_labels(c(manager))
+  ) %>%
+  
+  #style the 'manager' column in the table body
+  tab_style(
+    style = cell_text(weight = "bold", color = "#381B58"),
+    locations = cells_body(columns = c(manager))
+  ) %>%
+  
+  #center-align all other columns (except manager)
+  tab_style(
+    style = cell_text(align = "center" , color = "#381B58"),
+    locations = cells_body(columns = -c(manager))
+  ) %>%
+  
+  #table options for layout
+  tab_options(
+    data_row.padding = px(10),
+    column_labels.padding = px(20),
+    table.width = pct(70)
+  )
+
+top_formation_table
+
+gtsave(top_formation_table, filename = here("Results/25_26", "preferred_formation.png"))
 
 
 ## Cumulative plots ------------------------------------------------------------
